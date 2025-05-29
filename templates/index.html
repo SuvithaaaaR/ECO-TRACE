@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoTrace - E-Waste Management</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Navbar Section -->
+    <header>
+      <div class="navbar">
+        <h1 class="logo">EcoTrace</h1>
+        <nav>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#classifier">E-Waste Classifier</a></li>
+            <li><a href="#collected">Collected E-Waste</a></li>
+            <li><a href="#pickup">Pickup</a></li>
+            <li><a href="#rewards">Rewards</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+      <h1>EcoTrace</h1>
+      <h2>Waste Management and Recycling</h2>
+      <p>Trusted by 23,000+ | 16 Years of Experience | Lifetime Free Updates</p>
+      <div class="cta-buttons">
+        <a href="#classifier" class="button">Classify E-Waste</a>
+        <a href="#pickup" class="button secondary">Schedule Pickup</a>
+      </div>
+    </section>
+
+    <!-- E-Waste Classifier Section -->
+    <section id="classifier" class="e-waste-classifier">
+      <h2>E-Waste Classifier</h2>
+      <p>
+        Upload an image to determine if it's e-waste and earn reward points!
+      </p>
+      <form action="/classify" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required />
+        <button type="submit" class="button">Classify</button>
+      </form>
+
+      {% if result %}
+      <div class="result">
+        <h3>Classification Result:</h3>
+        <p>{{ result }}</p>
+      </div>
+      {% elif error %}
+      <div class="error">
+        <h3>Error:</h3>
+        <p>{{ error }}</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Collected E-Waste Section -->
+    <section id="collected" class="collected">
+      <h2>Collected Items</h2>
+      <form action="#collected" method="POST">
+        <button type="submit" name="filter" value="e-waste" class="button">
+          Show Collected E-Waste
+        </button>
+        <button
+          type="submit"
+          name="filter"
+          value="not-e-waste"
+          class="button secondary"
+        >
+          Show Not E-Waste
+        </button>
+      </form>
+
+      {% if request.method == 'POST' and request.form['filter'] == 'e-waste' %}
+      <div class="collected-items">
+        <h3>Collected E-Waste</h3>
+        {% for item in ewaste_items %}
+        <div class="collected-item">
+          <img
+            src="/uploads/{{ item[0] }}"
+            alt="{{ item[1] }}"
+            class="collected-image"
+          />
+          <p>{{ item[1] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% elif request.method == 'POST' and request.form['filter'] ==
+      'not-e-waste' %}
+      <div class="collected-items">
+        <h3>Not E-Waste</h3>
+        {% for item in nonewaste_items %}
+        <div class="collected-item">
+          <img
+            src="/uploads/{{ item[0] }}"
+            alt="{{ item[1] }}"
+            class="collected-image"
+          />
+          <p>{{ item[1] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Rewards Section -->
+    <section id="rewards">
+      <h2>Rewards Program</h2>
+      <p>Earn points for every e-waste item you recycle with us!</p>
+      <div class="reward-info">
+        <h3>Your Current Points: {{ total_rewards }}</h3>
+        <ul>
+          <li>10 points for each e-waste item classified</li>
+          <li>20 points for scheduling a pickup</li>
+          <li>Redeem your points for exclusive eco-friendly products</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Pickup Section -->
+    <section id="pickup">
+      <h2>E-Waste Pickup System</h2>
+      <p>
+        Schedule a pickup for your e-waste items and contribute to a cleaner
+        environment.
+      </p>
+      <form action="/schedule" method="POST">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required />
+
+        <label for="address">Address:</label>
+        <textarea id="address" name="address" required></textarea>
+
+        <label for="contact">Contact Number:</label>
+        <input type="text" id="contact" name="contact" required />
+
+        <label for="ewaste">Select E-Waste Item:</label>
+        <select id="ewaste" name="ewaste" required>
+          {% if ewaste_classifications %} {% for classification in
+          ewaste_classifications %}
+          <option value="{{ classification[0] }}">
+            {{ classification[0] }}
+          </option>
+          {% endfor %} {% else %}
+          <option value="" disabled selected>No e-waste items available</option>
+          <option value="Computer">Computer (Default)</option>
+          <option value="Mobile Phone">Mobile Phone (Default)</option>
+          <option value="Television">Television (Default)</option>
+          <option value="Other">Other Electronic Device (Default)</option>
+          {% endif %}
+        </select>
+
+        <label for="schedule">Select Pickup Date and Time:</label>
+        <input type="datetime-local" id="schedule" name="schedule" required />
+
+        <button type="submit" class="button">Schedule Pickup</button>
+      </form>
+    </section>
+
+    <!-- Scheduled Pickups Section -->
+    <section id="scheduled-pickups" class="scheduled-pickups">
+      <h2>Scheduled Pickups</h2>
+      {% if schedule_data %}
+      <div class="pickup-list">
+        {% for request in schedule_data %}
+        <div class="pickup-item">
+          <p><strong>Name:</strong> {{ request[1] }}</p>
+          <p><strong>Address:</strong> {{ request[2] }}</p>
+          <p><strong>Contact:</strong> {{ request[3] }}</p>
+          <p><strong>E-Waste Item:</strong> {{ request[4] }}</p>
+          <p><strong>Scheduled Date & Time:</strong> {{ request[5] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No pickups scheduled yet.</p>
+      {% endif %}
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+      <h2>About Us</h2>
+      <p>
+        EcoTrace is dedicated to providing responsible e-waste management
+        solutions. Trusted by thousands, we aim to make the world a cleaner
+        place.
+      </p>
+      <div class="about-boxes">
+        <div class="box">
+          <img
+            src="/static/icons/mission.png"
+            alt="Mission Icon"
+            class="icon"
+          />
+          <h3>Our Mission</h3>
+          <p>
+            To create a sustainable future by recycling electronic waste
+            responsibly. We strive to educate communities and promote
+            eco-friendly practices.
+          </p>
+        </div>
+        <div class="box">
+          <img src="/static/icons/vision.png" alt="Vision Icon" class="icon" />
+          <h3>Our Vision</h3>
+          <p>
+            To be the global leader in e-waste management and recycling
+            solutions, ensuring a cleaner and greener planet for future
+            generations.
+          </p>
+        </div>
+        <div class="box">
+          <img src="/static/icons/values.png" alt="Values Icon" class="icon" />
+          <h3>Our Values</h3>
+          <p>
+            Integrity, sustainability, and innovation in every step we take. We
+            are committed to making a positive impact on the environment.
+          </p>
+        </div>
+        <div class="box">
+          <img src="/static/icons/impact.png" alt="Impact Icon" class="icon" />
+          <h3>Our Impact</h3>
+          <p>
+            Over 1 million tons of e-waste recycled and counting. Join us in our
+            journey to reduce electronic waste and protect the planet.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+      <h2>Contact Us</h2>
+      <p>Have questions? Reach out to us!</p>
+      <form action="/contact" method="POST">
+        <label for="contact-name">Name:</label>
+        <input type="text" id="contact-name" name="name" required />
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required />
+
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" required></textarea>
+
+        <button type="submit" class="button">Send Message</button>
+      </form>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2025 EcoTrace. All rights reserved.</p>
+    </footer>
+  </body>
+</html>
